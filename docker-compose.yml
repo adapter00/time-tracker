@@ -1,0 +1,40 @@
+version: '3'
+ 
+services:
+  slack_cmd:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    tty:
+      true
+    volumes:
+      - .:/go/src/app
+    depends_on:
+      - postgres
+      - pgadmin
+    logging:
+      driver: json-file
+      options:
+        max-file: '1'
+        max-size: 1m
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password 
+      PGPASSWORD: password123
+      POSTGRES_MULTIPLE_DATABASES: slack,slack_test
+      TZ: "Asia/Tokyo"
+    ports:
+      - 127.0.0.1:5432:5432
+    logging:
+      driver: json-file
+      options:
+        max-file: '1'
+        max-size: 1m
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d
+volumes:
+  postgres:
