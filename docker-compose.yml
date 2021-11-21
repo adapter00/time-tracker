@@ -11,7 +11,6 @@ services:
       - .:/go/src/app
     depends_on:
       - postgres
-      - pgadmin
     logging:
       driver: json-file
       options:
