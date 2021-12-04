@@ -16,6 +16,8 @@ type TimeTrackerCommand struct {
 	controller *Controller
 }
 
+const month = "200601"
+
 func NewTimeTrackerCommand(c *socketmode.Client, db *sqlx.DB) *TimeTrackerCommand {
 	controller := NewController(db)
 	return &TimeTrackerCommand{
@@ -37,9 +39,9 @@ func (tt *TimeTrackerCommand) Do(evt socketmode.Event, cmd slack.SlashCommand) e
 	case "stop":
 		payload = tt.Stop(subcmd)
 	case "show":
-		payload = tt.Show()
+		payload = tt.Show(subcmd)
 	case "detail":
-		payload = tt.Show()
+		payload = tt.Show(subcmd)
 	case "rstart":
 		payload = tt.RestStart()
 	case "rstop":
@@ -93,9 +95,17 @@ func (tt *TimeTrackerCommand) RestStop() map[string]interface{} {
 	return tt.makePayload("stop rest")
 }
 
-func (tt *TimeTrackerCommand) Show() map[string]interface{} {
-	now := time.Now()
-	b, e := BeginAndLateDateInMonth(now)
+func (tt *TimeTrackerCommand) Show(subCmd []string) map[string]interface{} {
+	showDate := time.Now()
+	if len(subCmd) == 2 {
+		var err error
+		showDate, err = time.Parse(month, subCmd[1])
+		if err != nil {
+			return tt.makePayload(fmt.Sprintf("stop is error by parse finished time,err:%v", err))
+		}
+	}
+	showDateJST := toJST(showDate)
+	b, e := BeginAndLateDateInMonth(showDateJST)
 	worktime, err := tt.controller.ShowWorkTimeIn(b.UTC(), e.UTC())
 	if err != nil {
 		return tt.makePayload(fmt.Sprintf("failed to calculate:%v", err))
@@ -104,7 +114,7 @@ func (tt *TimeTrackerCommand) Show() map[string]interface{} {
 }
 
 const helpMessage = "勤怠開始\n `/tm start`\n" +
-	"勤怠終了\n `/tm stop [default now or yyyy-mm-ddThh:mm:ss]` \n" +
+	"勤怠終了\n `/tm stop [default now or yyyymm]` \n" +
 	"休憩開始\n `/tm rstart ` \n" +
 	"休憩終了\n `/tm rstop ` \n" +
 	"勤怠時間表示\n `/tm show ` \n" +
