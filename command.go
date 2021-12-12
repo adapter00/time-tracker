@@ -41,7 +41,7 @@ func (tt *TimeTrackerCommand) Do(evt socketmode.Event, cmd slack.SlashCommand) e
 	case "show":
 		payload = tt.Show(subcmd)
 	case "detail":
-		payload = tt.Show(subcmd)
+		payload = tt.Details(subcmd)
 	case "rstart":
 		payload = tt.RestStart()
 	case "rstop":
@@ -63,23 +63,26 @@ func (tt *TimeTrackerCommand) Stop(subCmd []string) map[string]interface{} {
 	if len(subCmd) > 2 {
 		return tt.makePayload("invalid command")
 	}
-	if len(subCmd) == 1 {
-		_, err := tt.controller.Stop(time.Now())
+	finishedAt := time.Now()
+	if len(subCmd) > 1 {
+		dayStr := subCmd[1]
+		var err error
+		finishedAt, err = time.Parse(time.RFC3339, dayStr)
 		if err != nil {
-			return tt.makePayload(fmt.Sprintf("failed to save finish,err:%v", err))
+			return tt.makePayload(fmt.Sprintf("stop is error by parse finished time,err:%v", err))
 		}
-		return tt.makePayload("finish success")
 	}
-	dayStr := subCmd[1]
-	finishedAt, err := time.Parse(time.RFC3339, dayStr)
-	if err != nil {
-		return tt.makePayload(fmt.Sprintf("stop is error by parse finished time,err:%v", err))
-	}
-	_, err = tt.controller.Stop(finishedAt.UTC())
+	tracks, err := tt.controller.Stop(finishedAt.UTC())
 	if err != nil {
 		return tt.makePayload(fmt.Sprintf("failed to save finish,err:%v", err))
 	}
-	return tt.makePayload("finish success")
+	var message string
+	if len(tracks) == 1 {
+		message = showWorkTime(tracks[0])
+	} else {
+		message = stopMultipleMessage(tracks)
+	}
+	return tt.makePayload(message)
 }
 
 func (tt *TimeTrackerCommand) RestStart() map[string]interface{} {
@@ -110,7 +113,25 @@ func (tt *TimeTrackerCommand) Show(subCmd []string) map[string]interface{} {
 	if err != nil {
 		return tt.makePayload(fmt.Sprintf("failed to calculate:%v", err))
 	}
-	return tt.makePayload(fmt.Sprintf("worktime:%v", worktime.String()))
+	return tt.makePayload(fmt.Sprintf("worktime:`%s`", worktime.String()))
+}
+
+func (tt *TimeTrackerCommand) Details(subCmd []string) map[string]interface{} {
+	showDate := time.Now()
+	if len(subCmd) == 2 {
+		var err error
+		showDate, err = time.Parse(month, subCmd[1])
+		if err != nil {
+			return tt.makePayload(fmt.Sprintf("stop is error by parse finished time,err:%v", err))
+		}
+	}
+	showDateJST := toJST(showDate)
+	b, e := BeginAndLateDateInMonth(showDateJST)
+	tracks, err := tt.controller.ShowIn(b.UTC(), e.UTC())
+	if err != nil {
+		return tt.makePayload(fmt.Sprintf("failed to get show in:%v", err))
+	}
+	return tt.makePayload(showWorkTimes(showDateJST, tracks))
 }
 
 const helpMessage = "勤怠開始\n `/tm start`\n" +
