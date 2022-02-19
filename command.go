@@ -32,34 +32,35 @@ func (tt *TimeTrackerCommand) Do(evt socketmode.Event, cmd slack.SlashCommand) e
 	if len(subcmd) == 0 {
 		// show worktime
 	}
-	payload := map[string]interface{}{}
+	blocks := []slack.Block{}
 	switch subcmd[0] {
 	case "start":
-		payload = tt.Start()
+		blocks = tt.Start()
 	case "stop":
-		payload = tt.Stop(subcmd)
+		blocks = tt.Stop(subcmd)
 	case "show":
-		payload = tt.Show(subcmd)
+		blocks = tt.Show(subcmd)
 	case "detail":
-		payload = tt.Details(subcmd)
+		blocks = tt.Details(subcmd)
 	case "rstart":
-		payload = tt.RestStart()
+		blocks = tt.RestStart()
 	case "rstop":
-		payload = tt.RestStop()
+		blocks = tt.RestStop()
 	default:
-		payload = tt.Help()
+		blocks = tt.Help()
 	}
-	tt.client.Ack(*evt.Request, payload)
+	tt.client.Ack(*evt.Request, nil)
+	tt.client.PostMessage(cmd.ChannelID, slack.MsgOptionBlocks(blocks...))
 	return nil
 }
-func (tt *TimeTrackerCommand) Start() map[string]interface{} {
+func (tt *TimeTrackerCommand) Start() []slack.Block {
 	if err := tt.controller.Start(attendance); err != nil {
 		return tt.makePayload(fmt.Sprintf("err:%v", err))
 	}
 	return tt.makePayload("start tracking")
 }
 
-func (tt *TimeTrackerCommand) Stop(subCmd []string) map[string]interface{} {
+func (tt *TimeTrackerCommand) Stop(subCmd []string) []slack.Block {
 	if len(subCmd) > 2 {
 		return tt.makePayload("invalid command")
 	}
@@ -85,20 +86,20 @@ func (tt *TimeTrackerCommand) Stop(subCmd []string) map[string]interface{} {
 	return tt.makePayload(message)
 }
 
-func (tt *TimeTrackerCommand) RestStart() map[string]interface{} {
+func (tt *TimeTrackerCommand) RestStart() []slack.Block {
 	if err := tt.controller.Start(rest); err != nil {
 		return tt.makePayload(fmt.Sprintf("failed to start rest,err:%v", err))
 	}
 	return tt.makePayload("rest start")
 }
-func (tt *TimeTrackerCommand) RestStop() map[string]interface{} {
+func (tt *TimeTrackerCommand) RestStop() []slack.Block {
 	if err := tt.controller.StopRest(time.Now()); err != nil {
 		return tt.makePayload(fmt.Sprintf("failed to finish rest,err:%v", err))
 	}
 	return tt.makePayload("stop rest")
 }
 
-func (tt *TimeTrackerCommand) Show(subCmd []string) map[string]interface{} {
+func (tt *TimeTrackerCommand) Show(subCmd []string) []slack.Block {
 	showDate := time.Now()
 	if len(subCmd) == 2 {
 		var err error
@@ -116,7 +117,7 @@ func (tt *TimeTrackerCommand) Show(subCmd []string) map[string]interface{} {
 	return tt.makePayload(fmt.Sprintf("worktime:`%s`", worktime.String()))
 }
 
-func (tt *TimeTrackerCommand) Details(subCmd []string) map[string]interface{} {
+func (tt *TimeTrackerCommand) Details(subCmd []string) []slack.Block {
 	showDate := time.Now()
 	if len(subCmd) == 2 {
 		var err error
@@ -142,20 +143,19 @@ const helpMessage = "勤怠開始\n `/tm start`\n" +
 	"詳細表示\n `/tm detail`" +
 	"ヘルプ\n `/tm help ` \n"
 
-func (tt *TimeTrackerCommand) Help() map[string]interface{} {
+func (tt *TimeTrackerCommand) Help() []slack.Block {
 	return tt.makePayload(helpMessage)
 }
 
-func (tt *TimeTrackerCommand) makePayload(markdownText string) map[string]interface{} {
-	return map[string]interface{}{
-		"blocks": []slack.Block{
-			slack.NewSectionBlock(
-				&slack.TextBlockObject{
-					Type: slack.MarkdownType,
-					Text: markdownText,
-				},
-				nil,
-				nil,
-			),
-		}}
+func (tt *TimeTrackerCommand) makePayload(markdownText string) []slack.Block {
+	return []slack.Block{
+		slack.NewSectionBlock(
+			&slack.TextBlockObject{
+				Type: slack.MarkdownType,
+				Text: markdownText,
+			},
+			nil,
+			nil,
+		),
+	}
 }

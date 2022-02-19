@@ -81,7 +81,7 @@ func (c *Controller) Stop(finishAt time.Time) ([]Track, error) {
 			return tracks, err
 		}
 	} else {
-		log.Printf("show latest attedance:%v", lt)
+		log.Printf("show latest rest:%v", lt)
 		if lt.FinishedAt == nil || lt.FinishedAt.IsZero() {
 			lt.FinishedAt = &finishAt
 			tracks = append(tracks, lt)
