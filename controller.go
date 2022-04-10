@@ -108,6 +108,27 @@ func (c *Controller) StopRest(finishAt time.Time) error {
 	return c.updateFinishAt(finishAt, []Track{lt})
 }
 
+func (c *Controller) Add(start, finish time.Time) error {
+	tracks, err := c.ShowIn(start, finish)
+	if err != nil {
+		return err
+	}
+	if len(tracks) > 0 {
+		return fmt.Errorf("already register tracks in period")
+	}
+	now := time.Now()
+	track := Track{
+		StartAt:    start,
+		FinishedAt: &finish,
+		Type:       attendance,
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	}
+	log.Printf("insert track")
+	_, err = c.db.NamedExec("insert into tracks (start_at,finish_at,type,created_at, updated_at) values (:start_at,:finish_at,:type,:created_at, :updated_at);", track)
+	return err
+}
+
 func (c *Controller) updateFinishAt(finishAt time.Time, tracks []Track) error {
 	ids := make([]uint, 0)
 	duplicate := map[uint]struct{}{}
