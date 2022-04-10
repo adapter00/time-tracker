@@ -18,7 +18,7 @@ type TimeTrackerCommand struct {
 
 const (
 	month    = "200601"
-	workTime = "2006/01/02 15:04"
+	workTime = "20060102 15:04"
 )
 
 func NewTimeTrackerCommand(c *socketmode.Client, db *sqlx.DB) *TimeTrackerCommand {
@@ -165,6 +165,7 @@ const helpMessage = "勤怠開始\n `/tm start`\n" +
 	"休憩終了\n `/tm rstop ` \n" +
 	"勤怠時間表示\n `/tm show ` \n" +
 	"詳細表示\n `/tm detail`" +
+	"勤怠追加\n `/tm add [yyyymmdd HH:MM]`" +
 	"ヘルプ\n `/tm help ` \n"
 
 func (tt *TimeTrackerCommand) Help() []slack.Block {
