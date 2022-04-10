@@ -38,7 +38,7 @@ func main() {
 			case socketmode.EventTypeConnecting:
 				fmt.Println("connecting to Slack with Socket Mode...")
 			case socketmode.EventTypeConnectionError:
-				fmt.Println("connection failed. Retrying later...")
+				fmt.Println("connection failed. Retrying later...,err:%v", evt.Request.Reason)
 			case socketmode.EventTypeConnected:
 				fmt.Println("connected to Slack with Socket Mode.")
 			case socketmode.EventTypeSlashCommand:
