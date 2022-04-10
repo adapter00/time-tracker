@@ -17,6 +17,7 @@ type TimeTrackerCommand struct {
 }
 
 const month = "200601"
+const workTime = "200601"
 
 func NewTimeTrackerCommand(c *socketmode.Client, db *sqlx.DB) *TimeTrackerCommand {
 	controller := NewController(db)
@@ -46,6 +47,8 @@ func (tt *TimeTrackerCommand) Do(evt socketmode.Event, cmd slack.SlashCommand) e
 		blocks = tt.RestStart()
 	case "rstop":
 		blocks = tt.RestStop()
+	case "add":
+		blocks = tt.Add(subcmd)
 	default:
 		blocks = tt.Help()
 	}
@@ -97,6 +100,25 @@ func (tt *TimeTrackerCommand) RestStop() []slack.Block {
 		return tt.makePayload(fmt.Sprintf("failed to finish rest,err:%v", err))
 	}
 	return tt.makePayload("stop rest")
+}
+
+func (tt *TimeTrackerCommand) Add(subCmd []string) []slack.Block {
+
+	if len(subCmd) != 3 {
+		return tt.makePayload("invalid args...")
+	}
+	start, err := time.ParseInLocation(workTime, subCmd[1], jst)
+	if err != nil {
+		return tt.makePayload("invalid start_at format,")
+	}
+	finishedAt, err := time.ParseInLocation(workTime, subCmd[2], jst)
+	if err != nil {
+		return tt.makePayload("invalid finished_at format,")
+	}
+	if err := tt.controller.Add(start.UTC(), finishedAt.UTC()); err != nil {
+		return tt.makePayload("invalid finished_at format,")
+	}
+	return tt.makePayload("add")
 }
 
 func (tt *TimeTrackerCommand) Show(subCmd []string) []slack.Block {
