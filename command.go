@@ -16,8 +16,10 @@ type TimeTrackerCommand struct {
 	controller *Controller
 }
 
-const month = "200601"
-const workTime = "200601"
+const (
+	month    = "200601"
+	workTime = "2006/01/02 15:04"
+)
 
 func NewTimeTrackerCommand(c *socketmode.Client, db *sqlx.DB) *TimeTrackerCommand {
 	controller := NewController(db)
@@ -109,16 +111,16 @@ func (tt *TimeTrackerCommand) Add(subCmd []string) []slack.Block {
 	}
 	start, err := time.ParseInLocation(workTime, subCmd[1], jst)
 	if err != nil {
-		return tt.makePayload("invalid start_at format,")
+		return tt.makePayload(fmt.Sprintf("invalid start_at format ex.) %s", workTime))
 	}
 	finishedAt, err := time.ParseInLocation(workTime, subCmd[2], jst)
 	if err != nil {
-		return tt.makePayload("invalid finished_at format,")
+		return tt.makePayload(fmt.Sprintf("invalid finish_at format ex.) %s", workTime))
 	}
 	if err := tt.controller.Add(start.UTC(), finishedAt.UTC()); err != nil {
 		return tt.makePayload("invalid finished_at format,")
 	}
-	return tt.makePayload("add")
+	return tt.makePayload(fmt.Sprintf("add success, start:%s end:%s", start.String(), finishedAt.String()))
 }
 
 func (tt *TimeTrackerCommand) Show(subCmd []string) []slack.Block {
