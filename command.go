@@ -17,8 +17,8 @@ type TimeTrackerCommand struct {
 }
 
 const (
-	month    = "200601"
-	workTime = "20060102 15:04"
+	month    = "2006/01"
+	workTime = "2006/01/02T15:04"
 )
 
 func NewTimeTrackerCommand(c *socketmode.Client, db *sqlx.DB) *TimeTrackerCommand {
@@ -105,7 +105,6 @@ func (tt *TimeTrackerCommand) RestStop() []slack.Block {
 }
 
 func (tt *TimeTrackerCommand) Add(subCmd []string) []slack.Block {
-
 	if len(subCmd) != 3 {
 		return tt.makePayload("invalid args...")
 	}
@@ -118,7 +117,7 @@ func (tt *TimeTrackerCommand) Add(subCmd []string) []slack.Block {
 		return tt.makePayload(fmt.Sprintf("invalid finish_at format ex.) %s", workTime))
 	}
 	if err := tt.controller.Add(start.UTC(), finishedAt.UTC()); err != nil {
-		return tt.makePayload("invalid finished_at format,")
+		return tt.makePayload(fmt.Sprintf("failed to add,err:%v", err))
 	}
 	return tt.makePayload(fmt.Sprintf("add success, start:%s end:%s", start.String(), finishedAt.String()))
 }
@@ -160,12 +159,12 @@ func (tt *TimeTrackerCommand) Details(subCmd []string) []slack.Block {
 }
 
 const helpMessage = "勤怠開始\n `/tm start`\n" +
-	"勤怠終了\n `/tm stop [default now or yyyymm]` \n" +
+	"勤怠終了\n `/tm stop [default now or yyyy/mm]` \n" +
 	"休憩開始\n `/tm rstart ` \n" +
 	"休憩終了\n `/tm rstop ` \n" +
 	"勤怠時間表示\n `/tm show ` \n" +
 	"詳細表示\n `/tm detail`" +
-	"勤怠追加\n `/tm add [yyyymmdd HH:MM]`" +
+	"勤怠追加\n `/tm add [yyyy/mm/ddTHH:MM]`" +
 	"ヘルプ\n `/tm help ` \n"
 
 func (tt *TimeTrackerCommand) Help() []slack.Block {
