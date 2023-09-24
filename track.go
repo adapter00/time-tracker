@@ -10,11 +10,20 @@ const (
 	rest
 )
 
+type CompanyType uint
+const (
+    // soeacy
+    Soeacy CompanyType= iota
+    // evem
+    EvemJapan 
+)
+
 type Track struct {
 	ID         uint       `db:"id"`
 	StartAt    time.Time  `db:"start_at"`
 	FinishedAt *time.Time `db:"finish_at"`
 	Type       TrackType  `db:"type"`
+    Company CompanyType `db:"company_type"`
 	CreatedAt  time.Time  `db:"created_at"`
 	UpdatedAt  time.Time  `db:"updated_at"`
 }

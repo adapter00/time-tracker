@@ -21,8 +21,8 @@ func NewController(db *sqlx.DB) *Controller {
 	}
 }
 
-func (c *Controller) Start(trackType TrackType) error {
-	aw, err := c.ShowLatestTrack(attendance)
+func (c *Controller) Start(trackType TrackType,ct CompanyType) error {
+	aw, err := c.ShowLatestTrack(attendance,ct)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			return err
@@ -39,7 +39,7 @@ func (c *Controller) Start(trackType TrackType) error {
 			}
 		}
 	}
-	lt, err := c.ShowLatestTrack(rest)
+	lt, err := c.ShowLatestTrack(rest,ct)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			return err
@@ -61,9 +61,9 @@ func (c *Controller) Start(trackType TrackType) error {
 	return err
 }
 
-func (c *Controller) Stop(finishAt time.Time) ([]Track, error) {
+func (c *Controller) Stop(finishAt time.Time,ct CompanyType) ([]Track, error) {
 	tracks := make([]Track, 0)
-	aw, err := c.ShowLatestTrack(attendance)
+	aw, err := c.ShowLatestTrack(attendance,ct)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			return tracks, err
@@ -75,7 +75,7 @@ func (c *Controller) Stop(finishAt time.Time) ([]Track, error) {
 			tracks = append(tracks, aw)
 		}
 	}
-	lt, err := c.ShowLatestTrack(rest)
+	lt, err := c.ShowLatestTrack(rest,ct)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			return tracks, err
@@ -94,8 +94,8 @@ func (c *Controller) Stop(finishAt time.Time) ([]Track, error) {
 	return tracks, err
 }
 
-func (c *Controller) StopRest(finishAt time.Time) error {
-	lt, err := c.ShowLatestTrack(rest)
+func (c *Controller) StopRest(finishAt time.Time,ct CompanyType) error {
+	lt, err := c.ShowLatestTrack(rest,ct)
 	if err != nil {
 		return err
 	}
@@ -153,9 +153,9 @@ func (c *Controller) Delete(track Track) error {
 	return nil
 }
 
-func (c *Controller) ShowLatestTrack(t TrackType) (Track, error) {
+func (c *Controller) ShowLatestTrack(t TrackType, companyType CompanyType) (Track, error) {
 	var track Track
-	err := c.db.Get(&track, "select id,type,start_at,finish_at from tracks where type=$1 order by id desc", t)
+	err := c.db.Get(&track, "select id,type,start_at,finish_at from tracks where type=$1 company_type=$2 order by id desc", t,companyType)
 	return track, err
 }
 
