@@ -54,17 +54,6 @@ func main() {
 	client.Run()
 }
 
-var schema = `
-CREATE TABLE IF NOT EXISTS tracks(
-    id SERIAL,
-    start_at TIMESTAMP NOT NULL,
-    finish_at TIMESTAMP DEFAULT NULL, 
-    type INTEGER NOT NULL,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    PRIMARY KEY (id)
-);
-`
 
 func setupDB() *sqlx.DB {
 	dsn := "host=postgres user=user password=password dbname=slack sslmode=disable"
@@ -85,7 +74,5 @@ func setupDB() *sqlx.DB {
 		sqldblogger.WithPreparerLevel(sqldblogger.LevelDebug),
 		sqldblogger.WithExecerLevel(sqldblogger.LevelDebug),
 	)
-
-	db.MustExec(schema)
 	return db
 }

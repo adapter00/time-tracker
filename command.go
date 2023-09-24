@@ -35,20 +35,22 @@ func (tt *TimeTrackerCommand) Do(evt socketmode.Event, cmd slack.SlashCommand) e
 	if len(subcmd) == 0 {
 		// show worktime
 	}
+    defaultCompany := EvemJapan
+
 	blocks := []slack.Block{}
 	switch subcmd[0] {
 	case "start":
-		blocks = tt.Start()
+		blocks = tt.Start(defaultCompany)
 	case "stop":
-		blocks = tt.Stop(subcmd)
+		blocks = tt.Stop(subcmd,defaultCompany)
 	case "show":
 		blocks = tt.Show(subcmd)
 	case "detail":
 		blocks = tt.Details(subcmd)
 	case "rstart":
-		blocks = tt.RestStart()
+		blocks = tt.RestStart(defaultCompany)
 	case "rstop":
-		blocks = tt.RestStop()
+		blocks = tt.RestStop(defaultCompany)
 	case "add":
 		blocks = tt.Add(subcmd)
 	default:
@@ -58,14 +60,14 @@ func (tt *TimeTrackerCommand) Do(evt socketmode.Event, cmd slack.SlashCommand) e
 	tt.client.PostMessage(cmd.ChannelID, slack.MsgOptionBlocks(blocks...))
 	return nil
 }
-func (tt *TimeTrackerCommand) Start() []slack.Block {
-	if err := tt.controller.Start(attendance); err != nil {
+func (tt *TimeTrackerCommand) Start(ct CompanyType) []slack.Block {
+	if err := tt.controller.Start(attendance,ct); err != nil {
 		return tt.makePayload(fmt.Sprintf("err:%v", err))
 	}
 	return tt.makePayload("start tracking")
 }
 
-func (tt *TimeTrackerCommand) Stop(subCmd []string) []slack.Block {
+func (tt *TimeTrackerCommand) Stop(subCmd []string,ct CompanyType) []slack.Block {
 	if len(subCmd) > 2 {
 		return tt.makePayload("invalid command")
 	}
@@ -78,7 +80,7 @@ func (tt *TimeTrackerCommand) Stop(subCmd []string) []slack.Block {
 			return tt.makePayload(fmt.Sprintf("stop is error by parse finished time,err:%v", err))
 		}
 	}
-	tracks, err := tt.controller.Stop(finishedAt.UTC())
+	tracks, err := tt.controller.Stop(finishedAt.UTC(),ct)
 	if err != nil {
 		return tt.makePayload(fmt.Sprintf("failed to save finish,err:%v", err))
 	}
@@ -91,14 +93,14 @@ func (tt *TimeTrackerCommand) Stop(subCmd []string) []slack.Block {
 	return tt.makePayload(message)
 }
 
-func (tt *TimeTrackerCommand) RestStart() []slack.Block {
-	if err := tt.controller.Start(rest); err != nil {
+func (tt *TimeTrackerCommand) RestStart(ct CompanyType) []slack.Block {
+	if err := tt.controller.Start(rest,ct); err != nil {
 		return tt.makePayload(fmt.Sprintf("failed to start rest,err:%v", err))
 	}
 	return tt.makePayload("rest start")
 }
-func (tt *TimeTrackerCommand) RestStop() []slack.Block {
-	if err := tt.controller.StopRest(time.Now()); err != nil {
+func (tt *TimeTrackerCommand) RestStop(ct CompanyType) []slack.Block {
+	if err := tt.controller.StopRest(time.Now(),ct); err != nil {
 		return tt.makePayload(fmt.Sprintf("failed to finish rest,err:%v", err))
 	}
 	return tt.makePayload("stop rest")
@@ -116,6 +118,7 @@ func (tt *TimeTrackerCommand) Add(subCmd []string) []slack.Block {
 	if err != nil {
 		return tt.makePayload(fmt.Sprintf("invalid finish_at format ex.) %s", workTime))
 	}
+    // FIXME: add company type
 	if err := tt.controller.Add(start.UTC(), finishedAt.UTC()); err != nil {
 		return tt.makePayload(fmt.Sprintf("failed to add,err:%v", err))
 	}

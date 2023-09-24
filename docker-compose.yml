@@ -1,6 +1,22 @@
 version: '3'
  
 services:
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["go", "run", "./cmd/migration/main.go"]
+    tty:
+      true
+    volumes:
+      - .:/go/src/app
+    depends_on:
+      - postgres
+    logging:
+      driver: json-file
+      options:
+        max-file: '1'
+        max-size: 1m
   slack_cmd:
     build:
       context: .
@@ -11,6 +27,7 @@ services:
       - .:/go/src/app
     depends_on:
       - postgres
+      - migrate
     logging:
       driver: json-file
       options:
@@ -26,7 +43,7 @@ services:
       POSTGRES_MULTIPLE_DATABASES: slack,slack_test
       TZ: "Asia/Tokyo"
     ports:
-      - 127.0.0.1:5432:5432
+      - 0.0.0.0:54321:5432
     logging:
       driver: json-file
       options:
